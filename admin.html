@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>英単語クエスト 先生用</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1d2433;--soft:#667085;--line:#dfe3ea;--accent:#1f5fbf;--ok:#1b7a43;--ng:#c2352b;--warn:#fff3d6;}
+@media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b202b;--ink:#e8ebf2;--soft:#96a0b5;--line:#2c3342;--accent:#6ea4f5;--ok:#5cc98a;--ng:#f0796f;--warn:#3a3116;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+h1{font-size:16px;margin:0;flex:1}
+nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 16px 0}
+nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-bottom:none;border-radius:6px 6px 0 0;padding:8px 14px;cursor:pointer;font:inherit}
+nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{padding:0 16px 40px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:0 6px 6px 6px;padding:14px;overflow-x:auto}
+button.b,input,textarea,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:5px;padding:6px 10px}
+button.b{cursor:pointer}button.b.p{background:var(--accent);border-color:var(--accent);color:#fff}
+button.b.d{color:var(--ng);border-color:var(--ng)}
+button.b.s{padding:2px 8px;font-size:12px;margin-right:4px}
+table{border-collapse:collapse;width:100%;white-space:nowrap}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{color:var(--soft);font-weight:600;font-size:12px}
+tr.click{cursor:pointer}tr.click:hover{background:var(--bg)}
+.num{text-align:right}.stale{color:var(--ng)}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.msg{padding:8px 12px;border-radius:5px;background:var(--warn);margin-bottom:12px}
+.login{max-width:340px;margin:12vh auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px}
+.login input{width:100%;margin:10px 0}
+textarea{width:100%;min-height:110px}
+.hide{display:none}.soft{color:var(--soft);font-size:12px}
+.bar{display:inline-block;height:8px;background:var(--accent);border-radius:4px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="login" class="login">
+  <h1>先生用コンソール</h1>
+  <p class="soft">先生用パスワードを入力してください。この端末のメモリにだけ保持され、ページを閉じると消えます。</p>
+  <input id="pw" type="password" placeholder="先生用パスワード" autocomplete="current-password">
+  <button class="b p" id="loginBtn" style="width:100%">ログイン</button>
+  <p id="loginErr" class="soft" style="color:var(--ng)"></p>
+</div>
+
+<div id="app" class="hide">
+  <header><h1>英単語クエスト 先生用コンソール</h1><button class="b" id="logout">ログアウト</button></header>
+  <nav id="tabs">
+    <button data-t="overview" class="on">学習状況</button>
+    <button data-t="students">生徒管理</button>
+    <button data-t="weak">苦手ランキング</button>
+    <button data-t="sessions">学習履歴</button>
+  </nav>
+  <main><div class="panel" id="view"></div></main>
+</div>
+<script src="words.js"></script>
+<script>
+// ★ Supabase の値に書き換えてください（index.html と同じ値）
+const API_URL = 'https://rxzjvdfysltjiwmejtcj.supabase.co/functions/v1/eiken-service';
+const API_KEY = 'sb_publishable_hucyOX0G3gbfvvGDm6tOVA_g4YzPYEc';
+
+const W = new Map((window.WORDS_DATA || []).map(w => [w.id, w]));
+const MODE = {basic:'基本', category:'分類別', pos:'品詞別', jaen:'日→英', spell:'スペル', weak:'苦手'};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = s => s ? new Date(s).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '—';
+const days = s => s ? Math.floor((Date.now() - new Date(s)) / 864e5) : null;
+const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+
+let SECRET = '', tab = 'overview';
+
+async function api(action, extra) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', apikey:API_KEY, Authorization:'Bearer ' + API_KEY},
+    body: JSON.stringify({action, adminSecret:SECRET, ...extra}),
+  });
+  if (r.status === 403) throw new Error('パスワードが違います');
+  const d = await r.json().catch(() => ({}));
+  if (d.result !== 'success') throw new Error(d.message || '通信に失敗しました');
+  return d;
+}
+const show = (html) => { $('view').innerHTML = html; };
+const notice = (t) => `<div class="msg">${esc(t)}</div>`;
+const wordCell = id => { const w = W.get(id); return w ? `<b>${esc(w.en)}</b> <span class="soft">${esc(w.ja)}（${esc(w.lv)}）</span>` : '#' + id; };
+
+// ---------- ログイン ----------
+async function doLogin() {
+  if (API_URL.includes('YOUR_')) { $('loginErr').textContent = 'admin.html の API_URL と API_KEY を書き換えてください。'; return; }
+  SECRET = $('pw').value;
+  $('loginErr').textContent = '確認中…';
+  try { await api('overview'); $('login').classList.add('hide'); $('app').classList.remove('hide'); $('pw').value = ''; go('overview'); }
+  catch (e) { SECRET = ''; $('loginErr').textContent = e.message; }
+}
+$('loginBtn').onclick = doLogin;
+$('pw').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+$('logout').onclick = () => { SECRET = ''; $('app').classList.add('hide'); $('login').classList.remove('hide'); };
+$('tabs').onclick = e => { const t = e.target.dataset.t; if (t) go(t); };
+
+async function go(t) {
+  tab = t;
+  [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  show('<p class="soft">読み込み中…</p>');
+  try { await ({overview, students, weak, sessions}[t])(); }
+  catch (e) { show(notice('エラー：' + e.message)); }
+}
+
+// ---------- 学習状況 ----------
+let OV = [];
+async function overview() {
+  OV = (await api('overview')).students;
+  OV.sort((a, b) => String(b.last_study_at || '').localeCompare(String(a.last_study_at || '')));
+  const rows = OV.map(s => {
+    const d = days(s.last_study_at);
+    return `<tr class="click" data-n="${esc(s.number)}">
+      <td>${esc(s.number)}</td><td>${esc(s.name)}</td><td>${esc(s.grade)}</td><td class="num">${s.lv}</td>
+      <td class="num">${s.total_q}</td><td class="num">${pct(s.total_correct, s.total_q)}</td>
+      <td class="num">${s.study_days}</td><td class="num">${s.studied_words}</td>
+      <td class="num">${s.mastered_words}</td><td class="num">${s.weak_words}</td>
+      <td class="${d === null || d >= 7 ? 'stale' : ''}">${fmt(s.last_study_at)}${d === null ? '（未学習）' : d >= 7 ? `（${d}日前）` : ''}</td>
+      <td class="num ${s.flag_count ? 'stale' : ''}">${s.flag_count || ''}</td></tr>`;
+  }).join('');
+  show(`<div class="tools"><b>${OV.length}名</b><span class="soft">赤字は7日以上未学習。行を押すと詳細を表示します。</span>
+    <button class="b" id="csv">CSVで保存</button></div>
+    <table><thead><tr><th>番号</th><th>名前</th><th>学年</th><th>Lv</th><th>解答数</th><th>正答率</th><th>学習日数</th><th>学習語数</th><th>習得語数</th><th>苦手語数</th><th>最終学習</th><th>要確認</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="12">生徒がまだ登録されていません（生徒管理タブから追加）</td></tr>'}</tbody></table>`);
+  $('csv').onclick = () => {
+    const head = ['番号','名前','学校','学年','Lv','解答数','正解数','学習日数','学習語数','習得語数','苦手語数','最終学習','要確認'];
+    const body = OV.map(s => [s.number,s.name,s.school,s.grade,s.lv,s.total_q,s.total_correct,s.study_days,s.studied_words,s.mastered_words,s.weak_words,s.last_study_at,s.flag_count]);
+    const csv = [head, ...body].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type:'text/csv'}));
+    a.download = 'eiken_students.csv'; a.click();
+  };
+  $('view').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => detail(tr.dataset.n));
+}
+
+async function detail(n) {
+  show('<p class="soft">読み込み中…</p>');
+  try {
+    const d = await api('studentDetail', {number:n});
+    const p = d.progress?.state?.player || {};
+    const flags = d.progress?.flags || [];
+    const weak = d.stats.filter(r => r[1] >= 3).map(r => ({id:r[0], shown:r[1], rate:r[2] / r[1]}))
+      .sort((a, b) => a.rate - b.rate || b.shown - a.shown).slice(0, 30);
+    show(`<div class="tools"><button class="b" id="back">← 一覧に戻る</button><b>${esc(n)}</b></div>
+      <p>Lv ${p.lv || 1} ／ 累計 ${p.totalQ || 0}問 ／ 正答率 ${pct(p.totalCorrect || 0, p.totalQ || 0)} ／ 最高スコア ${p.highScore || 0} ／ 最大コンボ ${p.maxComboEver || 0}</p>
+      <h3>苦手な単語（3回以上出題）</h3>
+      <table><thead><tr><th>単語</th><th>出題</th><th>正答率</th></tr></thead><tbody>
+      ${weak.map(w => `<tr><td>${wordCell(w.id)}</td><td class="num">${w.shown}</td><td class="num">${Math.round(w.rate * 100)}%</td></tr>`).join('') || '<tr><td colspan="3">まだデータがありません</td></tr>'}
+      </tbody></table>
+      <h3>サーバーが補正した記録（不自然な値）</h3>
+      ${flags.length ? '<ul>' + flags.slice().reverse().map(f => `<li>${fmt(f.at)}　${esc(f.msg)}</li>`).join('') + '</ul>' : '<p class="soft">ありません</p>'}`);
+    $('back').onclick = () => go('overview');
+  } catch (e) { show(notice('エラー：' + e.message)); }
+}
+
+// ---------- 生徒管理 ----------
+async function students() {
+  const list = (await api('students')).students;
+  const now = Date.now();
+  const rows = list.map(s => {
+    const locked = s.locked_until && new Date(s.locked_until) > now;
+    return `<tr data-n="${esc(s.number)}"><td>${esc(s.number)}</td><td>${esc(s.name)}</td>
+      <td><span class="pc" data-p="${esc(s.passcode)}">••••</span></td><td>${esc(s.school)}</td><td>${esc(s.grade)}</td>
+      <td>${locked ? '<span class="stale">ロック中</span>' : ''}</td>
+      <td><button class="b s" data-a="edit">編集</button><button class="b s" data-a="unlock">ロック解除</button>
+      <button class="b s d" data-a="reset">進捗リセット</button><button class="b s d" data-a="del">削除</button></td></tr>`;
+  }).join('');
+  show(`<h3>生徒を追加</h3>
+    <p class="soft">1行に1人、「番号,ニックネーム,合言葉,学校,学年」の順に入力（学校・学年は省略可、タブ区切りも可）。本名ではなくニックネームを推奨します。</p>
+    <textarea id="add" placeholder="001,たろう,1234,◯◯校,中2&#10;002,はなこ,5678,◯◯校,中3"></textarea>
+    <div class="tools"><button class="b p" id="addBtn">追加する</button><span id="addMsg" class="soft"></span></div>
+    <h3>登録済み（${list.length}名）</h3>
+    <p class="soft">合言葉は押すと表示されます。</p>
+    <table><thead><tr><th>番号</th><th>名前</th><th>合言葉</th><th>学校</th><th>学年</th><th>状態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`);
+  $('addBtn').onclick = async () => {
+    const rows = $('add').value.split(/\r?\n/).map(l => l.split(/[,\t]/).map(x => x.trim())).filter(r => r[0] && r[1] && r[2])
+      .map(r => ({number:r[0], name:r[1], passcode:r[2], school:r[3] || '', grade:r[4] || ''}));
+    if (!rows.length) { $('addMsg').textContent = '入力形式を確認してください'; return; }
+    try {
+      const r = await api('addStudents', {students:rows});
+      alert(`${r.added}名を追加しました。` + (r.skippedNumbers.length ? `\n登録済みのためスキップ：${r.skippedNumbers.join(', ')}` : ''));
+      go('students');
+    } catch (e) { $('addMsg').textContent = e.message; }
+  };
+  $('view').querySelectorAll('.pc').forEach(el => el.onclick = () => { el.textContent = el.textContent === '••••' ? el.dataset.p : '••••'; });
+  $('view').querySelectorAll('button[data-a]').forEach(b => b.onclick = async () => {
+    const n = b.closest('tr').dataset.n, a = b.dataset.a, row = list.find(s => s.number === n);
+    try {
+      if (a === 'unlock') { await api('unlockStudent', {number:n}); }
+      else if (a === 'reset') {
+        if (!confirm(`${n} の進捗・単語成績・学習履歴をすべて削除します。元に戻せません。よろしいですか？`)) return;
+        await api('resetStudentProgress', {number:n});
+      } else if (a === 'del') {
+        if (!confirm(`${n}（${row.name}）を削除します。関連データもすべて消えます。よろしいですか？`)) return;
+        await api('deleteStudent', {number:n});
+      } else if (a === 'edit') {
+        const name = prompt('名前', row.name); if (name === null) return;
+        const passcode = prompt('合言葉', row.passcode); if (passcode === null) return;
+        const school = prompt('学校', row.school || ''); if (school === null) return;
+        const grade = prompt('学年', row.grade || ''); if (grade === null) return;
+        await api('updateStudent', {number:n, name, passcode, school, grade});
+      }
+      go('students');
+    } catch (e) { alert('エラー：' + e.message); }
+  });
+}
+
+// ---------- 苦手ランキング ----------
+async function weak() {
+  const list = (await api('weakRanking', {limit:100})).words;
+  show(`<p class="soft">全生徒の合計で5回以上出題された単語を、誤答率の高い順に表示します（上位100語）。授業で扱う単語選びに使えます。</p>
+    <table><thead><tr><th>順位</th><th>単語</th><th>取り組んだ人数</th><th>出題数</th><th>誤答率</th></tr></thead><tbody>
+    ${list.map((w, i) => `<tr><td class="num">${i + 1}</td><td>${wordCell(w.word_id)}</td><td class="num">${w.students}</td><td class="num">${w.shown}</td>
+      <td><span class="bar" style="width:${Math.round(w.miss_rate * 80)}px"></span> ${Math.round(w.miss_rate * 100)}%</td></tr>`).join('') || '<tr><td colspan="5">まだデータがありません</td></tr>'}
+    </tbody></table>`);
+}
+
+// ---------- 学習履歴 ----------
+async function sessions() {
+  const num = ($('flt') && $('flt').value) || '';
+  const list = (await api('sessions', {limit:200, studentNumber:num || undefined})).sessions;
+  show(`<div class="tools"><input id="flt" placeholder="生徒番号で絞り込み" value="${esc(num)}" size="14"><button class="b" id="fbtn">表示</button><span class="soft">新しい順に最大200件</span></div>
+    <table><thead><tr><th>日時</th><th>番号</th><th>モード</th><th>級</th><th>形式</th><th>正解/出題</th><th>最大コンボ</th><th>スコア</th></tr></thead><tbody>
+    ${list.map(s => `<tr><td>${fmt(s.studied_at)}</td><td>${esc(s.student_number)}</td><td>${esc(MODE[s.mode] || s.mode)}</td><td>${esc(s.level)}</td><td>${esc(s.format)}</td>
+      <td class="num">${s.correct_count}/${s.question_count}</td><td class="num">${s.combo_max}</td><td class="num">${s.score}</td></tr>`).join('') || '<tr><td colspan="8">記録がありません</td></tr>'}
+    </tbody></table>`);
+  $('fbtn').onclick = () => sessions();
+}
+</script>
+</body>
+</html>
