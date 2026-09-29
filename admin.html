@@ -228,7 +228,7 @@ function suggestNum(){
 function stu(){
   $('v').innerHTML=`<div class="panel"><h2>生徒を新規登録</h2>${addFormHtml()}<div class="msg" id="am2"></div></div>
     <div class="panel"><h2>CSV・まとめて登録</h2>
-    <div class="note">1行に1人、「番号,ニックネーム,合言葉,学校,学年」（学校・学年は省略可、タブ区切りも可）。見出し行があっても自動で読み飛ばします。</div>
+    <div class="note">CSVファイル、またはタブ・カンマ区切りのテキストを貼り付けてください。見出し行（生徒番号,氏名,合言葉,学年,校舎 など）があれば列の順番は自由に自動判定します。見出しが無い場合は「番号,ニックネーム,合言葉,学校,学年」の順として読み込みます（教材などの余分な列は無視します）。</div>
     <textarea id="bulk" placeholder="001,たろう,1234,◯◯校,中2&#10;002,はなこ,5678,◯◯校,中3"></textarea>
     <div class="row" style="margin-top:8px"><input type="file" id="csvf" accept=".csv,.txt"><button class="btn" onclick="addBulk()">📥 取り込む</button>
     <button class="btn sub" onclick="exportCsv()">📤 一覧をCSVで書き出す</button></div><div class="msg" id="bm"></div></div>
@@ -272,8 +272,43 @@ function addOne(){
     if(SCHOOLS.length&&$('fSchool')&&$('fYear'))suggestNum();
   });
 }
-const addBulk=()=>post($('bulk').value.split(/\r?\n/).map(l=>l.split(/[,\t]/).map(x=>x.trim())).filter(r=>r[0]&&r[1]&&r[2]&&!/番号/.test(r[0]))
-  .map(r=>({number:r[0],name:r[1],passcode:r[2],school:r[3]||'',grade:r[4]||''})),'bm');
+// カンマ区切り・引用符・改行を含むCSVも正しく読めるパーサー
+function parseCsv(text){
+  const rows=[];let row=[],field='',q=false;const s=text.replace(/\r\n/g,'\n');
+  for(let i=0;i<s.length;i++){const c=s[i];
+    if(q){if(c==='"'){if(s[i+1]==='"'){field+='"';i++}else q=false}else field+=c}
+    else if(c==='"')q=true;
+    else if(c===','||c==='\t'){row.push(field);field=''}
+    else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}
+    else field+=c;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row)}
+  return rows.filter(r=>!(r.length===1&&r[0]===''));
+}
+// 見出し行があれば列名（生徒番号/番号・氏名/名前/ニックネーム・合言葉・学年・校舎/学校）から列を判定し、
+// 教材など余分な列は無視する。見出しが無ければ「番号,ニックネーム,合言葉,学校,学年」の順とみなす。
+function rowsFromText(text){
+  const rows=parseCsv(text.replace(/^\uFEFF/,''));
+  if(!rows.length)return[];
+  const head=rows[0].map(x=>x.trim());
+  const idx={};
+  head.forEach((h,i)=>{
+    if(/^(生徒番号|番号)$/.test(h))idx.number=i;
+    else if(/^(氏名|名前|ニックネーム)$/.test(h))idx.name=i;
+    else if(/^(合言葉|パスコード)$/i.test(h))idx.passcode=i;
+    else if(/^学年$/.test(h))idx.grade=i;
+    else if(/^(校舎|学校)$/.test(h))idx.school=i;
+  });
+  if(idx.number!==undefined&&idx.name!==undefined&&idx.passcode!==undefined){
+    return rows.slice(1).map(r=>({
+      number:(r[idx.number]||'').trim(),name:(r[idx.name]||'').trim(),passcode:(r[idx.passcode]||'').trim(),
+      school:idx.school!==undefined?(r[idx.school]||'').trim():'',grade:idx.grade!==undefined?(r[idx.grade]||'').trim():'',
+    })).filter(x=>x.number&&x.name&&x.passcode);
+  }
+  return rows.filter(r=>r[0]&&r[1]&&r[2]&&!/番号/.test(r[0]))
+    .map(r=>({number:(r[0]||'').trim(),name:(r[1]||'').trim(),passcode:(r[2]||'').trim(),school:(r[3]||'').trim(),grade:(r[4]||'').trim()}));
+}
+const addBulk=()=>post(rowsFromText($('bulk').value),'bm');
 
 // ---------- 孤立データ（存在しない生徒の記録） ----------
 let ORPHANS=[];
