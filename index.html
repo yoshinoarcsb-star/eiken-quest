@@ -217,6 +217,7 @@
             <div style="font-size:24px">授業おつかれさま！</div>
             <div id="cls-score" style="font-size:40px;margin:14px 0"></div>
             <div id="cls-note" style="font-size:14px"></div>
+            <div id="cls-miss" style="text-align:left;margin-top:14px"></div>
         </div>
         <div id="cls-msg" style="text-align:center;margin:8px"></div>
         <button class="btn" style="background:#555;" onclick="clsLeave()">授業から出る</button>
@@ -1571,6 +1572,19 @@ async function clsRetry() {
 function clsFinish() {
     const tot = cls.words.length, list = Object.values(cls.ans), c = list.filter(a => a.ok).length;
     clsEl("cls-score").textContent = `${c} / ${tot} 問正解`;
+    const esc = t => String(t == null ? "" : t).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+    const miss = [];
+    cls.words.forEach((w, i) => {
+        if (i > cls.idx) return;
+        const a = cls.ans[i];
+        if (a && !a.ok) miss.push({ i, w, inp: a.input || "（空欄）" });
+        else if (!a && !cls.locked.has(i)) miss.push({ i, w, inp: "（未回答）" });
+    });
+    clsEl("cls-miss").innerHTML = miss.length
+        ? '<div style="font-weight:bold;margin-bottom:6px">間違えた問題（' + miss.length + '問）</div>' + miss.map(m =>
+            `<div style="background:rgba(255,255,255,.08);border-radius:8px;padding:8px;margin-bottom:6px">Q${m.i + 1}　${esc(m.w.ja)}<br>` +
+            `<span style="color:#5fe08f">正解：${esc(m.w.en)}</span><br><span style="color:#ff7b7b;font-size:14px">あなたの答え：${esc(m.inp)}</span></div>`).join("")
+        : "<div style=\"text-align:center\">全問正解！🎉</div>";
     if (cls.done) return; cls.done = true;
     let note = "";
     if (cls.room.apply_heat) {
