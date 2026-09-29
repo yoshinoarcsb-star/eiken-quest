@@ -74,7 +74,15 @@ const API_KEY='sb_publishable_hucyOX0G3gbfvvGDm6tOVA_g4YzPYEc';
 
 const W=new Map((window.WORDS_DATA||[]).map(w=>[w.id,w]));
 const MODE={basic:'基本',category:'分類別',pos:'品詞別',jaen:'日→英',spell:'スペル',weak:'苦手'};
-const READ=['overview','students','studentDetail','weakRanking','sessions'];
+const READ=['overview','students','studentDetail','weakRanking','sessions','orphanRecords'];
+
+// ★ 校舎ごとの生徒番号コード。実際の校舎名に書き換えて使ってください。
+// 並び順がそのままコード（1,2,3…）になります。校舎を増やすときは必ず「末尾に追記」してください
+// （途中に挿入すると、それより後の校舎の既存の生徒番号と食い違ってしまいます）。
+// 空のまま（[]）にしておくと、自動採番は使わず、これまで通り手入力になります。
+const SCHOOLS=[];
+const SCHOOL_CODES={};SCHOOLS.forEach((name,i)=>SCHOOL_CODES[name]=String(i+1));
+const GRADE_PRESET=['小学生','中学1年','中学2年','中学3年','高校1年','高校2年','高校3年'];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=s=>s?new Date(s).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
@@ -180,17 +188,55 @@ async function detail(n){
 }
 
 // ---------- 生徒管理 ----------
+function gradeOptsHtml(){
+  return [...new Set([...GRADE_PRESET,...S.map(s=>s.grade).filter(Boolean)])].map(g=>`<option value="${esc(g)}">`).join('');
+}
+function addFormHtml(){
+  if(SCHOOLS.length){
+    const thisYear=new Date().getFullYear(),years=[];for(let y=thisYear;y>=thisYear-20;y--)years.push(y);
+    return `<div class="row">
+      <label class="f">校舎<select id="fSchool" onchange="suggestNum()">${SCHOOLS.map(s=>`<option>${esc(s)}</option>`).join('')}</select></label>
+      <label class="f">生まれた年<select id="fYear" onchange="suggestNum()"><option value="">選択</option>${years.map(y=>`<option value="${y}">${y}年</option>`).join('')}</select></label>
+      <label class="f">生徒番号（自動生成・上書き可）<input id="fNum" style="width:110px"></label>
+      <label class="f">ニックネーム<input id="fName" style="width:130px"></label>
+      <label class="f">合言葉<input id="fPass" style="width:100px"></label>
+      <label class="f">学年<input id="fGrade" list="gradelist" style="width:110px"></label>
+      <datalist id="gradelist">${gradeOptsHtml()}</datalist>
+      <button class="btn" onclick="addOne()">＋ 追加</button></div>
+      <div class="note" id="numNote" style="color:var(--pri)"></div>`;
+  }
+  return `<div class="row">
+    <label class="f">番号<input id="fNum" style="width:90px"></label>
+    <label class="f">ニックネーム<input id="fName" style="width:130px"></label>
+    <label class="f">合言葉<input id="fPass" style="width:100px"></label>
+    <label class="f">校舎<input id="fSchool" style="width:130px"></label>
+    <label class="f">学年<input id="fGrade" list="gradelist" style="width:110px" placeholder="中2"></label>
+    <datalist id="gradelist">${gradeOptsHtml()}</datalist>
+    <button class="btn" onclick="addOne()">＋ 追加</button></div>
+    <div class="note">校舎名を SCHOOLS 定数に登録すると、生徒番号の自動採番が使えるようになります。</div>`;
+}
+function suggestNum(){
+  const school=$('fSchool').value,year=$('fYear').value,note=$('numNote');
+  if(!school||!year){note.textContent='';return}
+  const code=SCHOOL_CODES[school],yy=String(year).slice(-2),prefix=code+yy;
+  let max=0;const re=new RegExp('^'+prefix+'(\\d+)$');
+  S.forEach(s=>{const m=String(s.number).match(re);if(m)max=Math.max(max,parseInt(m[1],10))});
+  const num=prefix+String(max+1).padStart(2,'0');
+  $('fNum').value=num;
+  note.textContent=`${school}（コード${code}） / ${year}年生まれ / この組み合わせで${max+1}人目 → 生徒番号「${num}」`;
+}
 function stu(){
-  $('v').innerHTML=`<div class="panel"><h2>生徒を新規登録</h2><div class="row">
-    <label class="f">番号<input id="an" style="width:90px"></label><label class="f">ニックネーム<input id="am" style="width:130px"></label>
-    <label class="f">合言葉<input id="ap" style="width:100px"></label><label class="f">学校<input id="as" style="width:130px"></label>
-    <label class="f">学年<input id="ag2" style="width:80px" placeholder="中2"></label><button class="btn" onclick="addOne()">＋ 追加</button></div>
-    <div class="note">本名ではなくニックネームを推奨します。</div><div class="msg" id="am2"></div></div>
+  $('v').innerHTML=`<div class="panel"><h2>生徒を新規登録</h2>${addFormHtml()}<div class="msg" id="am2"></div></div>
     <div class="panel"><h2>CSV・まとめて登録</h2>
     <div class="note">1行に1人、「番号,ニックネーム,合言葉,学校,学年」（学校・学年は省略可、タブ区切りも可）。見出し行があっても自動で読み飛ばします。</div>
     <textarea id="bulk" placeholder="001,たろう,1234,◯◯校,中2&#10;002,はなこ,5678,◯◯校,中3"></textarea>
     <div class="row" style="margin-top:8px"><input type="file" id="csvf" accept=".csv,.txt"><button class="btn" onclick="addBulk()">📥 取り込む</button>
     <button class="btn sub" onclick="exportCsv()">📤 一覧をCSVで書き出す</button></div><div class="msg" id="bm"></div></div>
+    <div class="panel"><h2>存在しない生徒の記録（孤立データ）</h2>
+    <div class="note">生徒を削除すると、その生徒の学習記録もあわせて削除されます。ここでは、それ以前に削除された生徒の記録が残っていないかを確認・削除できます。</div>
+    <div class="row"><button class="btn sub" onclick="loadOrphans()">🔍 確認する</button><button class="btn danger" onclick="deleteAllOrphans()">🗑 まとめて削除</button></div>
+    <div class="tw"><table id="orphanTbl" class="hide"><thead><tr><th>生徒番号</th><th>学習履歴</th><th>単語進捗</th><th>進捗データ</th><th></th></tr></thead><tbody id="orphanBody"></tbody></table></div>
+    <div class="msg" id="orphanMsg"></div></div>
     <div class="panel">${fbar()}<div class="note" id="cnt"></div>
     <div class="tw"><table><thead><tr><th>番号</th><th>名前</th><th>合言葉</th><th>学校</th><th>学年</th><th>状態</th><th></th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
   $('csvf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('bulk').value=String(r.result).replace(/^\uFEFF/,'');r.readAsText(f,'UTF-8')};
@@ -210,16 +256,49 @@ function stu(){
   };draw();
 }
 const say=(id,t,ok)=>{$(id).className='msg '+(ok?'ok':'err');$(id).textContent=t};
-async function post(rows,id){
+async function post(rows,id,after){
   if(!rows.length){say(id,'入力形式を確認してください');return}
-  try{const r=await api('addStudents',{students:rows});
-    say(id,`${r.added}名を追加しました`+(r.skippedNumbers?.length?`（登録済みでスキップ：${r.skippedNumbers.join(', ')}）`:''),1);
-    await load();stu();say(id,`${r.added}名を追加しました`+(r.skippedNumbers?.length?`（登録済みでスキップ：${r.skippedNumbers.join(', ')}）`:''),1);
+  try{
+    const r=await api('addStudents',{students:rows});
+    const msg=`${r.added}名を追加しました`+(r.skippedNumbers?.length?`（登録済みのためスキップ：${r.skippedNumbers.join(', ')}）`:'');
+    await load();stu();say(id,msg,1);
+    if(after)after();
   }catch(e){say(id,e.message)}
 }
-const addOne=()=>post([{number:$('an').value.trim(),name:$('am').value.trim(),passcode:$('ap').value.trim(),school:$('as').value.trim(),grade:$('ag2').value.trim()}].filter(r=>r.number&&r.name&&r.passcode),'am2');
+function addOne(){
+  const row={number:$('fNum').value.trim(),name:$('fName').value.trim(),passcode:$('fPass').value.trim(),school:$('fSchool').value.trim(),grade:$('fGrade').value.trim()};
+  post([row].filter(r=>r.number&&r.name&&r.passcode),'am2',()=>{
+    // 連続登録しやすいよう、校舎・生まれた年は残し、次の生徒番号を自動で提案する
+    if(SCHOOLS.length&&$('fSchool')&&$('fYear'))suggestNum();
+  });
+}
 const addBulk=()=>post($('bulk').value.split(/\r?\n/).map(l=>l.split(/[,\t]/).map(x=>x.trim())).filter(r=>r[0]&&r[1]&&r[2]&&!/番号/.test(r[0]))
   .map(r=>({number:r[0],name:r[1],passcode:r[2],school:r[3]||'',grade:r[4]||''})),'bm');
+
+// ---------- 孤立データ（存在しない生徒の記録） ----------
+let ORPHANS=[];
+async function loadOrphans(){
+  const m=$('orphanMsg'),t=$('orphanTbl');
+  m.className='msg';m.textContent='確認中…';t.classList.add('hide');
+  try{
+    const r=await api('orphanRecords');
+    ORPHANS=r.orphans||[];
+    if(!ORPHANS.length){m.className='msg ok';m.textContent='存在しない生徒の記録は見つかりませんでした';return}
+    m.textContent='';
+    $('orphanBody').innerHTML=ORPHANS.map(o=>`<tr><td>${esc(o.number)}</td><td class="num">${o.sessions||0}</td><td class="num">${o.wordStats||0}</td><td class="num">${o.progress||0}</td>
+      <td><button class="btn danger sm" onclick="deleteOrphan('${esc(o.number)}')">削除</button></td></tr>`).join('');
+    t.classList.remove('hide');
+  }catch(e){m.className='msg err';m.textContent='取得に失敗しました：'+e.message}
+}
+async function deleteOrphan(n){
+  if(!confirm(`生徒番号 ${n}（既に存在しない生徒）の記録を削除します。元に戻せません。よろしいですか？`))return;
+  try{await api('deleteOrphanRecords',{numbers:[n]});loadOrphans()}catch(e){alert('削除に失敗しました：'+e.message)}
+}
+async function deleteAllOrphans(){
+  if(!ORPHANS.length){alert('まず「確認する」を押して、対象があるか確認してください');return}
+  if(!confirm(`存在しない生徒の記録（${ORPHANS.length}件の生徒番号分）をまとめて削除します。元に戻せません。よろしいですか？`))return;
+  try{await api('deleteOrphanRecords',{numbers:ORPHANS.map(o=>o.number)});loadOrphans()}catch(e){alert('削除に失敗しました：'+e.message)}
+}
 async function saveEdit(n){
   const name=$('e1').value.trim(),passcode=$('e2').value.trim();
   if(!name||!passcode){alert('名前と合言葉は必須です');return}
