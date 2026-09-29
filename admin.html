@@ -2,231 +2,311 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>英単語クエスト 先生用</title>
+<title>英単語クエスト 管理画面</title>
 <style>
-:root{--bg:#f5f6f8;--card:#fff;--ink:#1d2433;--soft:#667085;--line:#dfe3ea;--accent:#1f5fbf;--ok:#1b7a43;--ng:#c2352b;--warn:#fff3d6;}
-@media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b202b;--ink:#e8ebf2;--soft:#96a0b5;--line:#2c3342;--accent:#6ea4f5;--ok:#5cc98a;--ng:#f0796f;--warn:#3a3116;}}
+:root{--pri:#4a90e2;--sec:#f5a623;--bg:#1a1a2e;--panel:#16213e;--dan:#e94560;--ok:#4caf50}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line)}
-h1{font-size:16px;margin:0;flex:1}
-nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 16px 0}
-nav button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-bottom:none;border-radius:6px 6px 0 0;padding:8px 14px;cursor:pointer;font:inherit}
-nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-main{padding:0 16px 40px}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:0 6px 6px 6px;padding:14px;overflow-x:auto}
-button.b,input,textarea,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:5px;padding:6px 10px}
-button.b{cursor:pointer}button.b.p{background:var(--accent);border-color:var(--accent);color:#fff}
-button.b.d{color:var(--ng);border-color:var(--ng)}
-button.b.s{padding:2px 8px;font-size:12px;margin-right:4px}
-table{border-collapse:collapse;width:100%;white-space:nowrap}
-th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
-th{color:var(--soft);font-weight:600;font-size:12px}
-tr.click{cursor:pointer}tr.click:hover{background:var(--bg)}
-.num{text-align:right}.stale{color:var(--ng)}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.msg{padding:8px 12px;border-radius:5px;background:var(--warn);margin-bottom:12px}
-.login{max-width:340px;margin:12vh auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:22px}
-.login input{width:100%;margin:10px 0}
-textarea{width:100%;min-height:110px}
-.hide{display:none}.soft{color:var(--soft);font-size:12px}
-.bar{display:inline-block;height:8px;background:var(--accent);border-radius:4px;vertical-align:middle}
+body{font-family:'Helvetica Neue',Arial,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:#fff;margin:0;padding:20px}
+#app,#login{max-width:1100px;margin:0 auto;background:var(--panel);border-radius:15px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,.5)}
+#login{max-width:360px;margin-top:12vh}
+h1{text-align:center;color:var(--sec);margin:0 0 14px;font-size:22px}
+h2{color:var(--sec);margin:0 0 10px;font-size:16px}
+.hide{display:none!important}
+#top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+#sync{font-size:12px;color:#999}
+.btn{padding:10px 16px;background:var(--pri);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+.btn:active{transform:scale(.98)}
+.btn.sub{background:rgba(255,255,255,.1);font-weight:normal}
+.btn.danger{background:var(--dan)}
+.btn.sm{padding:5px 10px;font-size:12px;margin-right:3px}
+#tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+#tabs button{flex:1 1 auto;min-width:100px;padding:10px;border:none;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:13px;font-weight:bold;cursor:pointer}
+#tabs button.on{background:var(--pri)}
+.panel{background:rgba(255,255,255,.05);border-radius:10px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+input,select,textarea{background:#0f1730;color:#fff;border:1px solid #444;border-radius:6px;padding:8px;font:inherit;font-size:13px}
+textarea{width:100%;min-height:90px}
+label.f{font-size:12px;color:#aaa;display:flex;flex-direction:column;gap:3px}
+.tw{overflow:auto;max-height:58vh;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;white-space:nowrap}
+th{color:var(--sec);position:sticky;top:0;background:#10182f}
+tr:hover td{background:rgba(255,255,255,.04)}
+tr.k{cursor:pointer}
+.num{text-align:right}.bad{color:var(--dan)}.note{font-size:12px;color:#999;margin:4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.box{background:rgba(255,255,255,.08);border-radius:8px;padding:12px;text-align:center}
+.box .v{font-size:20px;font-weight:bold;color:var(--sec)}.box .l{font-size:11px;color:#aaa;margin-top:2px}
+.tg{display:flex;gap:6px;margin-bottom:12px}
+.tg button{padding:8px 14px;border:none;border-radius:6px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;cursor:pointer}
+.tg button.on{background:var(--pri)}
+.bar{display:inline-block;height:8px;background:var(--pri);border-radius:4px;vertical-align:middle}
+.msg{font-size:13px;min-height:16px;margin-top:6px}.msg.ok{color:var(--ok)}.msg.err{color:var(--dan)}
 </style>
 </head>
 <body>
-<div id="login" class="login">
+<div id="login">
   <h1>先生用コンソール</h1>
-  <p class="soft">先生用パスワードを入力してください。この端末のメモリにだけ保持され、ページを閉じると消えます。</p>
-  <input id="pw" type="password" placeholder="先生用パスワード" autocomplete="current-password">
-  <button class="b p" id="loginBtn" style="width:100%">ログイン</button>
-  <p id="loginErr" class="soft" style="color:var(--ng)"></p>
+  <p class="note">先生用パスワードを入力してください（この端末のメモリにだけ保持され、ページを閉じると消えます）。</p>
+  <input id="pw" type="password" placeholder="先生用パスワード" autocomplete="current-password" style="width:100%;margin-bottom:10px">
+  <button class="btn" id="loginBtn" style="width:100%">ログイン</button>
+  <div class="msg err" id="loginErr"></div>
 </div>
 
 <div id="app" class="hide">
-  <header><h1>英単語クエスト 先生用コンソール</h1><button class="b" id="logout">ログアウト</button></header>
-  <nav id="tabs">
-    <button data-t="overview" class="on">学習状況</button>
-    <button data-t="students">生徒管理</button>
-    <button data-t="weak">苦手ランキング</button>
-    <button data-t="sessions">学習履歴</button>
-  </nav>
-  <main><div class="panel" id="view"></div></main>
+  <h1>英単語クエスト 管理画面</h1>
+  <div id="top"><div id="sync">読み込み中…</div>
+    <div><button class="btn sub" id="relogin">🔑 再ログイン</button> <button class="btn sub" id="refresh">🔄 更新</button></div></div>
+  <div id="tabs">
+    <button data-t="ov" class="on">学習状況</button><button data-t="st">生徒管理</button><button data-t="se">成績確認</button>
+    <button data-t="wk">苦手単語分析</button><button data-t="ag">期間集計</button>
+  </div>
+  <div id="v"></div>
 </div>
+
 <script src="words.js"></script>
 <script>
-// ★ Supabase の値に書き換えてください（index.html と同じ値）
-const API_URL = 'https://rxzjvdfysltjiwmejtcj.supabase.co/functions/v1/smart-service';
-const API_KEY = 'sb_publishable_hucyOX0G3gbfvvGDm6tOVA_g4YzPYEc';
+// ★ index.html と同じ Supabase の値
+const API_URL='https://rxzjvdfysltjiwmejtcj.supabase.co/functions/v1/smart-service';
+const API_KEY='sb_publishable_hucyOX0G3gbfvvGDm6tOVA_g4YzPYEc';
 
-const W = new Map((window.WORDS_DATA || []).map(w => [w.id, w]));
-const MODE = {basic:'基本', category:'分類別', pos:'品詞別', jaen:'日→英', spell:'スペル', weak:'苦手'};
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = s => s ? new Date(s).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '—';
-const days = s => s ? Math.floor((Date.now() - new Date(s)) / 864e5) : null;
-const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+const W=new Map((window.WORDS_DATA||[]).map(w=>[w.id,w]));
+const MODE={basic:'基本',category:'分類別',pos:'品詞別',jaen:'日→英',spell:'スペル',weak:'苦手'};
+const READ=['overview','students','studentDetail','weakRanking','sessions'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>s?new Date(s).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+const days=s=>s?Math.floor((Date.now()-new Date(s))/864e5):null;
+const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—';
+const wordCell=id=>{const w=W.get(id);return w?`<b>${esc(w.en)}</b> <span style="color:#aaa">${esc(w.ja)}（${esc(w.lv)}）</span>`:'#'+id};
+const opts=(vals,first)=>`<option value="">${first}</option>`+[...new Set(vals.filter(Boolean))].sort().map(v=>`<option>${esc(v)}</option>`).join('');
+const stat=(v,l)=>`<div class="box"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+const st=t=>$('sync').textContent=t;
 
-let SECRET = '', tab = 'overview';
+let SECRET='',S=[],SESS=null,tab='ov',editing=null;
 
-async function api(action, extra) {
-  const r = await fetch(API_URL, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json', apikey:API_KEY, Authorization:'Bearer ' + API_KEY},
-    body: JSON.stringify({action, adminSecret:SECRET, ...extra}),
-  });
-  if (r.status === 403) throw new Error('パスワードが違います');
-  const d = await r.json().catch(() => ({}));
-  if (d.result !== 'success') throw new Error(d.message || '通信に失敗しました');
-  return d;
+async function api(action,extra,n=0){
+  try{
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:API_KEY,Authorization:'Bearer '+API_KEY},
+      body:JSON.stringify({action,adminSecret:SECRET,...extra})});
+    if(r.status===403)throw Object.assign(new Error('パスワードが違います'),{fatal:1});
+    const d=await r.json().catch(()=>({}));
+    if(d.result!=='success')throw new Error(d.message||'通信に失敗しました');
+    return d;
+  }catch(e){
+    if(e.fatal||n>=2||!READ.includes(action))throw e;
+    await new Promise(r=>setTimeout(r,2000));return api(action,extra,n+1);
+  }
 }
-const show = (html) => { $('view').innerHTML = html; };
-const notice = (t) => `<div class="msg">${esc(t)}</div>`;
-const wordCell = id => { const w = W.get(id); return w ? `<b>${esc(w.en)}</b> <span class="soft">${esc(w.ja)}（${esc(w.lv)}）</span>` : '#' + id; };
 
-// ---------- ログイン ----------
-async function doLogin() {
-  if (API_URL.includes('YOUR_')) { $('loginErr').textContent = 'admin.html の API_URL と API_KEY を書き換えてください。'; return; }
-  SECRET = $('pw').value;
-  $('loginErr').textContent = '確認中…';
-  try { await api('overview'); $('login').classList.add('hide'); $('app').classList.remove('hide'); $('pw').value = ''; go('overview'); }
-  catch (e) { SECRET = ''; $('loginErr').textContent = e.message; }
+// ---------- ログイン・読み込み ----------
+async function load(){
+  st('読み込み中…');
+  const [o,s]=await Promise.all([api('overview'),api('students')]);
+  const om=new Map(o.students.map(x=>[String(x.number),x]));
+  S=s.students.map(x=>({...om.get(String(x.number)),...x}));
+  SESS=null;
+  st('最終更新: '+new Date().toLocaleString('ja-JP'));
 }
-$('loginBtn').onclick = doLogin;
-$('pw').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
-$('logout').onclick = () => { SECRET = ''; $('app').classList.add('hide'); $('login').classList.remove('hide'); };
-$('tabs').onclick = e => { const t = e.target.dataset.t; if (t) go(t); };
+async function doLogin(){
+  SECRET=$('pw').value;$('loginErr').textContent='確認中…';
+  try{await load();$('login').classList.add('hide');$('app').classList.remove('hide');$('pw').value='';go('ov');}
+  catch(e){SECRET='';$('loginErr').textContent=e.message;}
+}
+$('loginBtn').onclick=doLogin;
+$('pw').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+$('relogin').onclick=()=>{SECRET='';S=[];$('app').classList.add('hide');$('login').classList.remove('hide')};
+$('refresh').onclick=async()=>{try{await load();go(tab)}catch(e){st('取得失敗：'+e.message)}};
+$('tabs').onclick=e=>{const t=e.target.dataset.t;if(t)go(t)};
 
-async function go(t) {
-  tab = t;
-  [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  show('<p class="soft">読み込み中…</p>');
-  try { await ({overview, students, weak, sessions}[t])(); }
-  catch (e) { show(notice('エラー：' + e.message)); }
+async function go(t){
+  tab=t;editing=null;
+  [...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('v').innerHTML='<div class="note">読み込み中…</div>';
+  try{await({ov,st:stu,se,wk,ag}[t])()}catch(e){$('v').innerHTML=`<div class="panel bad">エラー：${esc(e.message)}</div>`}
 }
+async function sessions(){
+  if(!SESS)SESS=(await api('sessions',{limit:1000})).sessions;
+  return SESS;
+}
+
+// ---------- 共通フィルタ ----------
+const fbar=(extra='')=>`<div class="row">
+  <label class="f">検索（番号/名前）<input id="q" oninput="draw()" placeholder="例: 001 / たろう"></label>
+  <label class="f">学年<select id="g" onchange="draw()">${opts(S.map(s=>s.grade),'すべて')}</select></label>
+  <label class="f">学校<select id="sc" onchange="draw()">${opts(S.map(s=>s.school),'すべて')}</select></label>${extra}</div>`;
+const match=s=>{const q=$('q').value.trim().toLowerCase();
+  return(!q||String(s.number).toLowerCase().includes(q)||String(s.name).toLowerCase().includes(q))
+   &&(!$('g').value||s.grade===$('g').value)&&(!$('sc').value||s.school===$('sc').value)};
+const byNum=(a,b)=>String(a.number).localeCompare(String(b.number),'ja',{numeric:true});
+let draw=()=>{};
 
 // ---------- 学習状況 ----------
-let OV = [];
-async function overview() {
-  OV = (await api('overview')).students;
-  OV.sort((a, b) => String(b.last_study_at || '').localeCompare(String(a.last_study_at || '')));
-  const rows = OV.map(s => {
-    const d = days(s.last_study_at);
-    return `<tr class="click" data-n="${esc(s.number)}">
-      <td>${esc(s.number)}</td><td>${esc(s.name)}</td><td>${esc(s.grade)}</td><td class="num">${s.lv}</td>
-      <td class="num">${s.total_q}</td><td class="num">${pct(s.total_correct, s.total_q)}</td>
-      <td class="num">${s.study_days}</td><td class="num">${s.studied_words}</td>
-      <td class="num">${s.mastered_words}</td><td class="num">${s.weak_words}</td>
-      <td class="${d === null || d >= 7 ? 'stale' : ''}">${fmt(s.last_study_at)}${d === null ? '（未学習）' : d >= 7 ? `（${d}日前）` : ''}</td>
-      <td class="num ${s.flag_count ? 'stale' : ''}">${s.flag_count || ''}</td></tr>`;
-  }).join('');
-  show(`<div class="tools"><b>${OV.length}名</b><span class="soft">赤字は7日以上未学習。行を押すと詳細を表示します。</span>
-    <button class="b" id="csv">CSVで保存</button></div>
-    <table><thead><tr><th>番号</th><th>名前</th><th>学年</th><th>Lv</th><th>解答数</th><th>正答率</th><th>学習日数</th><th>学習語数</th><th>習得語数</th><th>苦手語数</th><th>最終学習</th><th>要確認</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="12">生徒がまだ登録されていません（生徒管理タブから追加）</td></tr>'}</tbody></table>`);
-  $('csv').onclick = () => {
-    const head = ['番号','名前','学校','学年','Lv','解答数','正解数','学習日数','学習語数','習得語数','苦手語数','最終学習','要確認'];
-    const body = OV.map(s => [s.number,s.name,s.school,s.grade,s.lv,s.total_q,s.total_correct,s.study_days,s.studied_words,s.mastered_words,s.weak_words,s.last_study_at,s.flag_count]);
-    const csv = [head, ...body].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], {type:'text/csv'}));
-    a.download = 'eiken_students.csv'; a.click();
-  };
-  $('view').querySelectorAll('tr.click').forEach(tr => tr.onclick = () => detail(tr.dataset.n));
+function ov(){
+  const act=S.filter(s=>{const d=days(s.last_study_at);return d!==null&&d<7}).length;
+  const tq=S.reduce((a,s)=>a+(s.total_q||0),0),tc=S.reduce((a,s)=>a+(s.total_correct||0),0);
+  $('v').innerHTML=`<div class="grid">${stat(S.length,'登録生徒数')}${stat(act,'直近7日に学習')}
+    ${stat(S.length-act,'7日以上未学習')}${stat(pct(tc,tq),'全体の正答率')}${stat(S.filter(s=>s.flag_count).length,'要確認あり')}</div>
+    <div class="panel">${fbar(`<label class="f">未学習 N日以上<input id="d" type="number" min="0" value="0" style="width:80px" oninput="draw()"></label>`)}
+    <div class="note" id="cnt"></div>
+    <div class="tw"><table><thead><tr><th>番号</th><th>名前</th><th>学年</th><th>Lv</th><th>解答数</th><th>正答率</th><th>学習日数</th><th>学習語数</th><th>習得語数</th><th>苦手語数</th><th>最終学習</th><th>要確認</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="note">赤字は7日以上未学習。行を押すと詳細を表示します。</div></div>`;
+  draw=()=>{
+    const min=+$('d').value||0;
+    const list=S.filter(s=>match(s)&&(!min||(days(s.last_study_at)??9999)>=min)).sort((a,b)=>String(b.last_study_at||'').localeCompare(String(a.last_study_at||'')));
+    $('cnt').textContent=`${list.length} 名 / 全 ${S.length} 名`;
+    $('tb').innerHTML=list.map(s=>{const d=days(s.last_study_at),old=d===null||d>=7;
+      return `<tr class="k" onclick="detail('${esc(s.number)}')"><td>${esc(s.number)}</td><td>${esc(s.name)}</td><td>${esc(s.grade)}</td><td class="num">${s.lv||1}</td>
+      <td class="num">${s.total_q||0}</td><td class="num">${pct(s.total_correct,s.total_q)}</td><td class="num">${s.study_days||0}</td><td class="num">${s.studied_words||0}</td>
+      <td class="num">${s.mastered_words||0}</td><td class="num">${s.weak_words||0}</td>
+      <td class="${old?'bad':''}">${fmt(s.last_study_at)}${d===null?'（未学習）':d>=7?`（${d}日前）`:''}</td><td class="num ${s.flag_count?'bad':''}">${s.flag_count||''}</td></tr>`}).join('')
+      ||'<tr><td colspan="12" style="color:#999">該当する生徒がいません</td></tr>';
+  };draw();
 }
-
-async function detail(n) {
-  show('<p class="soft">読み込み中…</p>');
-  try {
-    const d = await api('studentDetail', {number:n});
-    const p = d.progress?.state?.player || {};
-    const flags = d.progress?.flags || [];
-    const weak = d.stats.filter(r => r[1] >= 3).map(r => ({id:r[0], shown:r[1], rate:r[2] / r[1]}))
-      .sort((a, b) => a.rate - b.rate || b.shown - a.shown).slice(0, 30);
-    show(`<div class="tools"><button class="b" id="back">← 一覧に戻る</button><b>${esc(n)}</b></div>
-      <p>Lv ${p.lv || 1} ／ 累計 ${p.totalQ || 0}問 ／ 正答率 ${pct(p.totalCorrect || 0, p.totalQ || 0)} ／ 最高スコア ${p.highScore || 0} ／ 最大コンボ ${p.maxComboEver || 0}</p>
-      <h3>苦手な単語（3回以上出題）</h3>
-      <table><thead><tr><th>単語</th><th>出題</th><th>正答率</th></tr></thead><tbody>
-      ${weak.map(w => `<tr><td>${wordCell(w.id)}</td><td class="num">${w.shown}</td><td class="num">${Math.round(w.rate * 100)}%</td></tr>`).join('') || '<tr><td colspan="3">まだデータがありません</td></tr>'}
-      </tbody></table>
-      <h3>サーバーが補正した記録（不自然な値）</h3>
-      ${flags.length ? '<ul>' + flags.slice().reverse().map(f => `<li>${fmt(f.at)}　${esc(f.msg)}</li>`).join('') + '</ul>' : '<p class="soft">ありません</p>'}`);
-    $('back').onclick = () => go('overview');
-  } catch (e) { show(notice('エラー：' + e.message)); }
+async function detail(n){
+  $('v').innerHTML='<div class="note">読み込み中…</div>';
+  try{
+    const d=await api('studentDetail',{number:n}),s=S.find(x=>String(x.number)===String(n))||{};
+    const p=d.progress?.state?.player||{},flags=d.progress?.flags||[];
+    const weak=d.stats.filter(r=>r[1]>=3).map(r=>({id:r[0],shown:r[1],rate:r[2]/r[1]})).sort((a,b)=>a.rate-b.rate||b.shown-a.shown).slice(0,30);
+    $('v').innerHTML=`<div class="row"><button class="btn sub" onclick="go('ov')">← 一覧に戻る</button><h2 style="margin:0">${esc(n)} ${esc(s.name||'')}</h2></div>
+      <div class="grid">${stat(p.lv||1,'レベル')}${stat(p.totalQ||0,'累計問題数')}${stat(pct(p.totalCorrect||0,p.totalQ||0),'正答率')}${stat(p.highScore||0,'最高スコア')}${stat(p.maxComboEver||0,'最大コンボ')}</div>
+      <div class="panel"><h2>苦手な単語（3回以上出題・正答率の低い順）</h2><div class="tw"><table><thead><tr><th>単語</th><th>出題</th><th>正答率</th></tr></thead><tbody>
+      ${weak.map(w=>`<tr><td>${wordCell(w.id)}</td><td class="num">${w.shown}</td><td class="num">${Math.round(w.rate*100)}%</td></tr>`).join('')||'<tr><td colspan="3" style="color:#999">まだデータがありません</td></tr>'}</tbody></table></div></div>
+      <div class="panel"><h2>サーバーが補正した記録（不自然な値）</h2>${flags.length?'<ul>'+flags.slice().reverse().map(f=>`<li>${fmt(f.at)}　${esc(f.msg)}</li>`).join('')+'</ul>':'<div class="note">ありません</div>'}</div>`;
+  }catch(e){$('v').innerHTML=`<div class="panel bad">エラー：${esc(e.message)}</div>`}
 }
 
 // ---------- 生徒管理 ----------
-async function students() {
-  const list = (await api('students')).students;
-  const now = Date.now();
-  const rows = list.map(s => {
-    const locked = s.locked_until && new Date(s.locked_until) > now;
-    return `<tr data-n="${esc(s.number)}"><td>${esc(s.number)}</td><td>${esc(s.name)}</td>
-      <td><span class="pc" data-p="${esc(s.passcode)}">••••</span></td><td>${esc(s.school)}</td><td>${esc(s.grade)}</td>
-      <td>${locked ? '<span class="stale">ロック中</span>' : ''}</td>
-      <td><button class="b s" data-a="edit">編集</button><button class="b s" data-a="unlock">ロック解除</button>
-      <button class="b s d" data-a="reset">進捗リセット</button><button class="b s d" data-a="del">削除</button></td></tr>`;
-  }).join('');
-  show(`<h3>生徒を追加</h3>
-    <p class="soft">1行に1人、「番号,ニックネーム,合言葉,学校,学年」の順に入力（学校・学年は省略可、タブ区切りも可）。本名ではなくニックネームを推奨します。</p>
-    <textarea id="add" placeholder="001,たろう,1234,◯◯校,中2&#10;002,はなこ,5678,◯◯校,中3"></textarea>
-    <div class="tools"><button class="b p" id="addBtn">追加する</button><span id="addMsg" class="soft"></span></div>
-    <h3>登録済み（${list.length}名）</h3>
-    <p class="soft">合言葉は押すと表示されます。</p>
-    <table><thead><tr><th>番号</th><th>名前</th><th>合言葉</th><th>学校</th><th>学年</th><th>状態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`);
-  $('addBtn').onclick = async () => {
-    const rows = $('add').value.split(/\r?\n/).map(l => l.split(/[,\t]/).map(x => x.trim())).filter(r => r[0] && r[1] && r[2])
-      .map(r => ({number:r[0], name:r[1], passcode:r[2], school:r[3] || '', grade:r[4] || ''}));
-    if (!rows.length) { $('addMsg').textContent = '入力形式を確認してください'; return; }
-    try {
-      const r = await api('addStudents', {students:rows});
-      alert(`${r.added}名を追加しました。` + (r.skippedNumbers.length ? `\n登録済みのためスキップ：${r.skippedNumbers.join(', ')}` : ''));
-      go('students');
-    } catch (e) { $('addMsg').textContent = e.message; }
+function stu(){
+  $('v').innerHTML=`<div class="panel"><h2>生徒を新規登録</h2><div class="row">
+    <label class="f">番号<input id="an" style="width:90px"></label><label class="f">ニックネーム<input id="am" style="width:130px"></label>
+    <label class="f">合言葉<input id="ap" style="width:100px"></label><label class="f">学校<input id="as" style="width:130px"></label>
+    <label class="f">学年<input id="ag2" style="width:80px" placeholder="中2"></label><button class="btn" onclick="addOne()">＋ 追加</button></div>
+    <div class="note">本名ではなくニックネームを推奨します。</div><div class="msg" id="am2"></div></div>
+    <div class="panel"><h2>CSV・まとめて登録</h2>
+    <div class="note">1行に1人、「番号,ニックネーム,合言葉,学校,学年」（学校・学年は省略可、タブ区切りも可）。見出し行があっても自動で読み飛ばします。</div>
+    <textarea id="bulk" placeholder="001,たろう,1234,◯◯校,中2&#10;002,はなこ,5678,◯◯校,中3"></textarea>
+    <div class="row" style="margin-top:8px"><input type="file" id="csvf" accept=".csv,.txt"><button class="btn" onclick="addBulk()">📥 取り込む</button>
+    <button class="btn sub" onclick="exportCsv()">📤 一覧をCSVで書き出す</button></div><div class="msg" id="bm"></div></div>
+    <div class="panel">${fbar()}<div class="note" id="cnt"></div>
+    <div class="tw"><table><thead><tr><th>番号</th><th>名前</th><th>合言葉</th><th>学校</th><th>学年</th><th>状態</th><th></th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
+  $('csvf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>$('bulk').value=String(r.result).replace(/^\uFEFF/,'');r.readAsText(f,'UTF-8')};
+  draw=()=>{
+    const list=S.filter(match).sort(byNum),now=Date.now();
+    $('cnt').textContent=`${list.length} 名 / 全 ${S.length} 名`;
+    $('tb').innerHTML=list.map(s=>{const n=esc(s.number),lock=s.locked_until&&new Date(s.locked_until)>now;
+      if(String(s.number)===String(editing))return `<tr><td>${n}</td><td><input id="e1" value="${esc(s.name)}" style="width:110px"></td><td><input id="e2" value="${esc(s.passcode)}" style="width:90px"></td>
+        <td><input id="e3" value="${esc(s.school)}" style="width:110px"></td><td><input id="e4" value="${esc(s.grade)}" style="width:70px"></td><td></td>
+        <td><button class="btn sm" onclick="saveEdit('${n}')">保存</button><button class="btn sub sm" onclick="editing=null;draw()">キャンセル</button></td></tr>`;
+      return `<tr><td>${n}</td><td>${esc(s.name)}</td><td><span style="cursor:pointer" data-p="${esc(s.passcode)}" onclick="this.textContent=this.textContent==='••••'?this.dataset.p:'••••'">••••</span></td>
+        <td>${esc(s.school)}</td><td>${esc(s.grade)}</td><td>${lock?'<span class="bad">ロック中</span>':''}</td>
+        <td><button class="btn sub sm" onclick="editing='${n}';draw()">編集</button><button class="btn sub sm" onclick="act('unlockStudent','${n}')">ロック解除</button>
+        <button class="btn sub sm" onclick="act('resetStudentProgress','${n}','進捗・単語成績・学習履歴をすべて削除します。元に戻せません。')">進捗リセット</button>
+        <button class="btn danger sm" onclick="act('deleteStudent','${n}','この生徒と関連データをすべて削除します。')">削除</button></td></tr>`}).join('')
+      ||'<tr><td colspan="7" style="color:#999">該当する生徒がいません</td></tr>';
+  };draw();
+}
+const say=(id,t,ok)=>{$(id).className='msg '+(ok?'ok':'err');$(id).textContent=t};
+async function post(rows,id){
+  if(!rows.length){say(id,'入力形式を確認してください');return}
+  try{const r=await api('addStudents',{students:rows});
+    say(id,`${r.added}名を追加しました`+(r.skippedNumbers?.length?`（登録済みでスキップ：${r.skippedNumbers.join(', ')}）`:''),1);
+    await load();stu();say(id,`${r.added}名を追加しました`+(r.skippedNumbers?.length?`（登録済みでスキップ：${r.skippedNumbers.join(', ')}）`:''),1);
+  }catch(e){say(id,e.message)}
+}
+const addOne=()=>post([{number:$('an').value.trim(),name:$('am').value.trim(),passcode:$('ap').value.trim(),school:$('as').value.trim(),grade:$('ag2').value.trim()}].filter(r=>r.number&&r.name&&r.passcode),'am2');
+const addBulk=()=>post($('bulk').value.split(/\r?\n/).map(l=>l.split(/[,\t]/).map(x=>x.trim())).filter(r=>r[0]&&r[1]&&r[2]&&!/番号/.test(r[0]))
+  .map(r=>({number:r[0],name:r[1],passcode:r[2],school:r[3]||'',grade:r[4]||''})),'bm');
+async function saveEdit(n){
+  const name=$('e1').value.trim(),passcode=$('e2').value.trim();
+  if(!name||!passcode){alert('名前と合言葉は必須です');return}
+  try{await api('updateStudent',{number:n,name,passcode,school:$('e3').value.trim(),grade:$('e4').value.trim()});await load();stu()}
+  catch(e){alert('エラー：'+e.message)}
+}
+async function act(a,n,warn){
+  const s=S.find(x=>String(x.number)===String(n));
+  if(warn&&!confirm(`${n}（${s?.name||''}）\n${warn}\nよろしいですか？`))return;
+  try{await api(a,{number:n});await load();stu()}catch(e){alert('エラー：'+e.message)}
+}
+function exportCsv(){
+  const rows=[['番号','名前','合言葉','学校','学年'],...S.slice().sort(byNum).map(s=>[s.number,s.name,s.passcode,s.school,s.grade])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));
+  a.download='eiken_students_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// ---------- 成績確認 ----------
+async function se(){
+  const L=await sessions(),nm=new Map(S.map(s=>[String(s.number),s]));
+  $('v').innerHTML=`<div class="panel">${fbar(`<label class="f">モード<select id="m" onchange="draw()">${'<option value="">すべて</option>'+Object.entries(MODE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+    <label class="f">級<select id="lv" onchange="draw()">${opts(L.map(x=>x.level),'すべて')}</select></label>`)}
+    <div class="note" id="cnt"></div>
+    <div class="tw"><table><thead><tr><th>日時</th><th>番号</th><th>名前</th><th>学年</th><th>モード</th><th>級</th><th>形式</th><th>正解/出題</th><th>最大コンボ</th><th>スコア</th></tr></thead><tbody id="tb"></tbody></table></div></div>`;
+  draw=()=>{
+    const list=L.filter(x=>{const s=nm.get(String(x.student_number))||{number:x.student_number,name:''};
+      return match(s)&&(!$('m').value||x.mode===$('m').value)&&(!$('lv').value||x.level===$('lv').value)});
+    $('cnt').textContent=`${list.length} 件 / 取得 ${L.length} 件（新しい順・最大1000件）`;
+    $('tb').innerHTML=list.slice(0,500).map(x=>{const s=nm.get(String(x.student_number))||{};
+      return `<tr><td>${fmt(x.studied_at)}</td><td>${esc(x.student_number)}</td><td>${esc(s.name)}</td><td>${esc(s.grade)}</td><td>${esc(MODE[x.mode]||x.mode)}</td>
+      <td>${esc(x.level)}</td><td>${esc(x.format)}</td><td class="num">${x.correct_count}/${x.question_count}</td><td class="num">${x.combo_max}</td><td class="num">${x.score}</td></tr>`}).join('')
+      ||'<tr><td colspan="10" style="color:#999">記録がありません</td></tr>';
+  };draw();
+}
+
+// ---------- 苦手単語分析 ----------
+let wmode='rank';
+function wk(){
+  $('v').innerHTML=`<div class="panel"><div class="tg"><button id="w1" onclick="wmode='rank';wk()" class="${wmode==='rank'?'on':''}">全体ランキング</button>
+    <button id="w2" onclick="wmode='stu';wk()" class="${wmode==='stu'?'on':''}">生徒別</button></div><div id="wb"></div></div>`;
+  wmode==='rank'?wrank():wstu();
+}
+async function wrank(){
+  $('wb').innerHTML='<div class="note">読み込み中…</div>';
+  try{const list=(await api('weakRanking',{limit:100})).words;
+    $('wb').innerHTML=`<div class="note">全生徒の合計で5回以上出題された単語を、誤答率の高い順に表示（上位100語）。授業で扱う単語選びに使えます。</div>
+    <div class="tw"><table><thead><tr><th>順位</th><th>単語</th><th>取り組んだ人数</th><th>出題数</th><th>誤答率</th></tr></thead><tbody>
+    ${list.map((w,i)=>`<tr><td class="num">${i+1}</td><td>${wordCell(w.word_id)}</td><td class="num">${w.students}</td><td class="num">${w.shown}</td>
+    <td><span class="bar" style="width:${Math.round(w.miss_rate*80)}px"></span> ${Math.round(w.miss_rate*100)}%</td></tr>`).join('')||'<tr><td colspan="5" style="color:#999">まだデータがありません</td></tr>'}</tbody></table></div>`;
+  }catch(e){$('wb').innerHTML=`<div class="bad">エラー：${esc(e.message)}</div>`}
+}
+function wstu(){
+  $('wb').innerHTML=`<div class="row"><label class="f">生徒を選択<select id="ws">${'<option value="">選択してください</option>'+S.slice().sort(byNum).map(s=>`<option value="${esc(s.number)}">${esc(s.number)} ${esc(s.name)}</option>`).join('')}</select></label></div><div id="wr"></div>`;
+  $('ws').onchange=async()=>{
+    const n=$('ws').value;if(!n){$('wr').innerHTML='';return}
+    $('wr').innerHTML='<div class="note">読み込み中…</div>';
+    try{const d=await api('studentDetail',{number:n});
+      const weak=d.stats.filter(r=>r[1]>=3).map(r=>({id:r[0],shown:r[1],rate:r[2]/r[1]})).sort((a,b)=>a.rate-b.rate||b.shown-a.shown).slice(0,50);
+      $('wr').innerHTML=`<div class="note">3回以上出題された単語を正答率の低い順に表示（上位50語）</div><div class="tw"><table><thead><tr><th>単語</th><th>出題</th><th>正答率</th></tr></thead><tbody>
+      ${weak.map(w=>`<tr><td>${wordCell(w.id)}</td><td class="num">${w.shown}</td><td class="num">${Math.round(w.rate*100)}%</td></tr>`).join('')||'<tr><td colspan="3" style="color:#999">まだデータがありません</td></tr>'}</tbody></table></div>`;
+    }catch(e){$('wr').innerHTML=`<div class="bad">エラー：${esc(e.message)}</div>`}
   };
-  $('view').querySelectorAll('.pc').forEach(el => el.onclick = () => { el.textContent = el.textContent === '••••' ? el.dataset.p : '••••'; });
-  $('view').querySelectorAll('button[data-a]').forEach(b => b.onclick = async () => {
-    const n = b.closest('tr').dataset.n, a = b.dataset.a, row = list.find(s => s.number === n);
-    try {
-      if (a === 'unlock') { await api('unlockStudent', {number:n}); }
-      else if (a === 'reset') {
-        if (!confirm(`${n} の進捗・単語成績・学習履歴をすべて削除します。元に戻せません。よろしいですか？`)) return;
-        await api('resetStudentProgress', {number:n});
-      } else if (a === 'del') {
-        if (!confirm(`${n}（${row.name}）を削除します。関連データもすべて消えます。よろしいですか？`)) return;
-        await api('deleteStudent', {number:n});
-      } else if (a === 'edit') {
-        const name = prompt('名前', row.name); if (name === null) return;
-        const passcode = prompt('合言葉', row.passcode); if (passcode === null) return;
-        const school = prompt('学校', row.school || ''); if (school === null) return;
-        const grade = prompt('学年', row.grade || ''); if (grade === null) return;
-        await api('updateStudent', {number:n, name, passcode, school, grade});
-      }
-      go('students');
-    } catch (e) { alert('エラー：' + e.message); }
-  });
 }
 
-// ---------- 苦手ランキング ----------
-async function weak() {
-  const list = (await api('weakRanking', {limit:100})).words;
-  show(`<p class="soft">全生徒の合計で5回以上出題された単語を、誤答率の高い順に表示します（上位100語）。授業で扱う単語選びに使えます。</p>
-    <table><thead><tr><th>順位</th><th>単語</th><th>取り組んだ人数</th><th>出題数</th><th>誤答率</th></tr></thead><tbody>
-    ${list.map((w, i) => `<tr><td class="num">${i + 1}</td><td>${wordCell(w.word_id)}</td><td class="num">${w.students}</td><td class="num">${w.shown}</td>
-      <td><span class="bar" style="width:${Math.round(w.miss_rate * 80)}px"></span> ${Math.round(w.miss_rate * 100)}%</td></tr>`).join('') || '<tr><td colspan="5">まだデータがありません</td></tr>'}
-    </tbody></table>`);
-}
-
-// ---------- 学習履歴 ----------
-async function sessions() {
-  const num = ($('flt') && $('flt').value) || '';
-  const list = (await api('sessions', {limit:200, studentNumber:num || undefined})).sessions;
-  show(`<div class="tools"><input id="flt" placeholder="生徒番号で絞り込み" value="${esc(num)}" size="14"><button class="b" id="fbtn">表示</button><span class="soft">新しい順に最大200件</span></div>
-    <table><thead><tr><th>日時</th><th>番号</th><th>モード</th><th>級</th><th>形式</th><th>正解/出題</th><th>最大コンボ</th><th>スコア</th></tr></thead><tbody>
-    ${list.map(s => `<tr><td>${fmt(s.studied_at)}</td><td>${esc(s.student_number)}</td><td>${esc(MODE[s.mode] || s.mode)}</td><td>${esc(s.level)}</td><td>${esc(s.format)}</td>
-      <td class="num">${s.correct_count}/${s.question_count}</td><td class="num">${s.combo_max}</td><td class="num">${s.score}</td></tr>`).join('') || '<tr><td colspan="8">記録がありません</td></tr>'}
-    </tbody></table>`);
-  $('fbtn').onclick = () => sessions();
+// ---------- 期間集計 ----------
+async function ag(){
+  const L=await sessions(),iso=d=>d.toISOString().slice(0,10),to=new Date(),from=new Date(Date.now()-29*864e5);
+  $('v').innerHTML=`<div class="panel"><div class="row">
+    <label class="f">開始日<input type="date" id="f1" value="${iso(from)}" onchange="draw()"></label><label class="f">終了日<input type="date" id="f2" value="${iso(to)}" onchange="draw()"></label>
+    <label class="f">学年<select id="g" onchange="draw()">${opts(S.map(s=>s.grade),'すべて')}</select></label>
+    <label class="f">学校<select id="sc" onchange="draw()">${opts(S.map(s=>s.school),'すべて')}</select></label>
+    <input id="q" class="hide"></div><div class="grid" id="gs"></div>
+    <div class="tw"><table><thead><tr><th>番号</th><th>名前</th><th>学年</th><th>学習回数</th><th>解答数</th><th>正答率</th><th>最大コンボ</th><th>平均スコア</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="note">取得済みの学習履歴（最新1000件まで）から集計しています。</div></div>`;
+  const nm=new Map(S.map(s=>[String(s.number),s]));
+  draw=()=>{
+    const a=new Date($('f1').value+'T00:00:00+09:00'),b=new Date($('f2').value+'T23:59:59+09:00'),M=new Map();
+    L.forEach(x=>{const t=new Date(x.studied_at),s=nm.get(String(x.student_number));
+      if(!s||t<a||t>b||!match(s))return;
+      const m=M.get(s.number)||{s,n:0,q:0,c:0,cb:0,sc:0};
+      m.n++;m.q+=x.question_count;m.c+=x.correct_count;m.cb=Math.max(m.cb,x.combo_max);m.sc+=x.score;M.set(s.number,m)});
+    const rows=[...M.values()].sort((x,y)=>y.n-x.n),T=rows.reduce((o,m)=>({n:o.n+m.n,q:o.q+m.q,c:o.c+m.c}),{n:0,q:0,c:0});
+    $('gs').innerHTML=stat(rows.length,'学習した人数')+stat(T.n,'学習回数')+stat(T.q,'総解答数')+stat(pct(T.c,T.q),'正答率');
+    $('tb').innerHTML=rows.map(m=>`<tr><td>${esc(m.s.number)}</td><td>${esc(m.s.name)}</td><td>${esc(m.s.grade)}</td><td class="num">${m.n}</td><td class="num">${m.q}</td>
+      <td class="num">${pct(m.c,m.q)}</td><td class="num">${m.cb}</td><td class="num">${Math.round(m.sc/m.n)}</td></tr>`).join('')||'<tr><td colspan="8" style="color:#999">この期間の記録がありません</td></tr>';
+  };draw();
 }
 </script>
 </body>
