@@ -1487,7 +1487,7 @@ const App = {
     if(this.session) this.session.aborted = true;
     this.finishSession();
   },
-  retrySame(){ this.beginQuiz(false); },
+  retrySame(){ this.goEquip(); }, // 同じ条件のまま装備選択画面に戻る（消費後の所持数で選び直す）
 
   finishSession(){
     const s = this.session;
