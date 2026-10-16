@@ -1180,6 +1180,13 @@ const App = {
   /* ---- quiz engine ---- */
   beginQuiz(skip){
     if(skip) this.equipSelected = [];
+    // 所持数を超える装備は外す（「もう一度挑戦」で、使い切ったアイテムが残らないように）
+    {
+      const left = Object.assign({}, SAVE.inventory);
+      const before = this.equipSelected.length;
+      this.equipSelected = this.equipSelected.filter(n=>{ if((left[n]||0)>0){ left[n]--; return true; } return false; });
+      if(this.equipSelected.length < before) toast('所持数が足りないアイテムは外しました');
+    }
     const pool = this.buildPool();
     if(pool.length===0){ toast('対象の単語がありません'); this.go('home'); return; }
     const mode = MODES.find(m=>m.id===this.nav.mode);
@@ -1529,6 +1536,12 @@ const App = {
         mode:s.nav.mode, level:s.nav.level, sub:s.nav.sub, format:s.nav.format, range:s.nav.range,
         endless:!!s.endless, questionCount:totalQ, correctCount:s.correctCount, comboMax:s.comboMax,
         score:finalScore, gainedExp:expGain, gainedPt:ptGain, items:s.items,
+      });
+    }
+    // 装備したアイテムを消費する（記録されるセッションと同じ条件：1問以上答えた時だけ）
+    if(totalQ>0){
+      (s.items||[]).forEach(n=>{
+        if((SAVE.inventory[n]||0)>0) SAVE.inventory[n]--;
       });
     }
     Sync.markDirty();
